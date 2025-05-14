@@ -1,34 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './App.css';
 
 function App() {
   const [city, setCity] = useState('Patna');
+  const [query, setQuery] = useState('Patna'); // used for triggering search
   const [forecast, setForecast] = useState([]);
   const [error, setError] = useState('');
 
-  const fetchWeather = async () => {
-    try {
-      const res = await fetch(
-        `https://api.weatherapi.com/v1/forecast.json?key=bc59ac78c25e48df96c52453250805&q=${city}&days=10&aqi=no&alerts=no`
-      );
-      const data = await res.json();
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const response = await axios.get(
+          `https://api.weatherapi.com/v1/forecast.json`,
+          {
+            params: {
+              key: 'bc59ac78c25e48df96c52453250805',
+              q: query,
+              days: 10,
+              aqi: 'no',
+              alerts: 'no',
+            },
+          }
+        );
 
-      if (data.error) {
-        setError(data.error.message);
+        const data = response.data;
+
+        if (data.error) {
+          setError(data.error.message);
+          setForecast([]);
+        } else {
+          setForecast(data.forecast.forecastday);
+          setError('');
+        }
+      } catch (err) {
+        setError('Failed to fetch data');
         setForecast([]);
-        return;
       }
+    };
 
-      setForecast(data.forecast.forecastday);
-      setError('');
-    } catch (err) {
-      setError('Failed to fetch data');
+    if (query) {
+      fetchWeather();
     }
-  };
+  }, [query]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetchWeather();
+    setQuery(city);
   };
 
   return (
